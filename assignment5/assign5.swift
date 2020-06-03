@@ -97,9 +97,9 @@ class StrV: Val {
 }
 
 class Env {
-    var bindings: [Symbol : Val] = [:]
-    init(bindings: [Symbol : Val] = [:]){
-        self.bindings = bindings
+    var e: [Symbol : Val] = [:]
+    init(e: [Symbol : Val] = [:]){
+        self.e = e
     }
 }
 
@@ -115,5 +115,4 @@ class ClosV : Val{
     }
     
 }
-
 
