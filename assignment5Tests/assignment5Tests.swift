@@ -30,9 +30,6 @@ class Tests: XCTestCase {
         let str1 = StrC(str: "hello")
         XCTAssertEqual(str1.str, "hello", "test failed")
      }
-    func testIdC(){
-       let idC1 = IdC(str: "hello")
-       XCTAssertEqual(str1.str, "hello", "test failed")
-    }
+    
 }
 

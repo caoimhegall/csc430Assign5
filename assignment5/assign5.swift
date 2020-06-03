@@ -30,6 +30,15 @@ class Symbol {
         self.sym = sym
     }
 }
+extension Symbol: Hashable {
+    static func == (lhs: Symbol, rhs: Symbol) -> Bool {
+        return lhs.sym == rhs.sym && lhs.sym == rhs.sym
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(sym)
+    }
+}
 
 class IdC : ExprC {
     var sym: Symbol
@@ -58,36 +67,43 @@ class IfC: ExprC {
   }
 }
 
-protocol Value {
+protocol Val {
 }
 
-class NumV: Value {
+class NumV: Val {
     var n: Double
     init(n: Double){
         self.n = n
     }
 }
-class BoolV: Value {
+class BoolV: Val {
     var b: Bool
     init(b: Bool){
         self.b = b
     }
 }
-class PrimV: Value {
+class PrimV: Val {
   var s: Symbol
   init(s: Symbol){
     self.s = s
   }
 }
 
-class StrV: Value {
+class StrV: Val {
   var s: String
   init(s: String){
     self.s = s
   }
 }
 
-class ClosV : Value{
+class Env {
+    var bindings: [Symbol : Val] = [:]
+    init(bindings: [Symbol : Val] = [:]){
+        self.bindings = bindings
+    }
+}
+
+class ClosV : Val{
     var args : [Symbol]
     var body : ExprC
     var env : Env
@@ -99,4 +115,5 @@ class ClosV : Value{
     }
     
 }
+
 
