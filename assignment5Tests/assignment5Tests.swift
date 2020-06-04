@@ -30,6 +30,15 @@ class Tests: XCTestCase {
         let str1 = StrC(str: "hello")
         XCTAssertEqual(str1.str, "hello", "test failed")
      }
+    func testInterp(){
+        do {
+            let t = try interp(e: NumC(v:3), env: Env(e:[:])) as! NumV
+            XCTAssertEqual(t, NumV(v : 3), "test failed")
+        }
+        catch {
+            print("error")
+        }
+    }
     
 }
 

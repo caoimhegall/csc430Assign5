@@ -8,6 +8,10 @@
 
 import Foundation
 
+enum UnboundIdError: Error{
+  case noIdFoundInEnv
+}
+
 protocol ExprC {
 }
 
@@ -56,6 +60,15 @@ class AppC : ExprC {
     }
 }
 
+class LamC: ExprC {
+  var args: [Symbol]
+  var body: ExprC
+    init(a: [Symbol], b: ExprC){
+    self.args = a
+    self.body = b
+  }
+}
+
 class IfC: ExprC {
   var test: ExprC
   var then: ExprC
@@ -71,10 +84,16 @@ protocol Val {
 }
 
 class NumV: Val {
-    var n: Double
-    init(n: Double){
-        self.n = n
+    var v: Double
+    init(v: Double){
+        self.v = v
     }
+}
+extension NumV: Equatable {
+    static func == (lhs: NumV, rhs: NumV) -> Bool {
+    lhs.v == rhs.v
+  }
+
 }
 class BoolV: Val {
     var b: Bool
@@ -114,5 +133,52 @@ class ClosV : Val{
         self.env = env
     }
     
+}
+
+func interp(e : ExprC, env: Env) throws -> Val {
+  switch e {
+  case let n as NumC:
+    return NumV(v : n.v)
+  case let st as StrC:
+    return StrV(s: st.str)
+  case let l as LamC:
+    return ClosV(args: l.args, body: l.body, env: env)
+  case let id as IdC:
+    if let res = env.e[id.sym]{
+        return res
+    }
+    else {
+        throw UnboundIdError.noIdFoundInEnv
+    }
+    case let i as IfC:
+        let tstval = try interp(e: i.test, env: env)
+        
+        switch tstval{
+        case let b as BoolV:
+            if b.b { return try interp(e: i.then, env: env) }
+            else{ return try interp(e: i.els, env: env) }
+        default:
+          // error message here
+          return NumV(v: 3)
+      }
+    case let a as AppC:
+      let fn = try interp(e: a.fun, env: env)
+      let argvals = try a.args.map { try interp(e: $0, env: env) }
+      switch fn {
+        case let clos as ClosV:
+          for i in 0...a.args.count {
+            clos.env.e[clos.args[i]] = argvals[i]
+          }
+          return try interp(e: clos.body, env: clos.env)
+        case let prim as PrimV:
+          return NumV(v: 3)
+        default:
+          return NumV(v: 3)
+      }
+
+
+    default:
+        return NumV(v: 3)
+  }
 }
 
