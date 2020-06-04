@@ -89,22 +89,10 @@ class NumV: Val {
         self.v = v
     }
 }
+
 extension NumV: Equatable {
     static func == (lhs: NumV, rhs: NumV) -> Bool {
-    lhs.v == rhs.v
-  }
-
-}
-class BoolV: Val {
-    var b: Bool
-    init(b: Bool){
-        self.b = b
-    }
-}
-class PrimV: Val {
-  var s: Symbol
-  init(s: Symbol){
-    self.s = s
+        lhs.v == rhs.v
   }
 }
 
@@ -112,6 +100,38 @@ class StrV: Val {
   var s: String
   init(s: String){
     self.s = s
+  }
+}
+
+extension StrV: Equatable {
+    static func == (lhs: StrV, rhs: StrV) -> Bool {
+        lhs.s == rhs.s
+  }
+}
+
+class BoolV: Val {
+    var b: Bool
+    init(b: Bool){
+        self.b = b
+    }
+}
+
+extension BoolV: Equatable {
+    static func == (lhs: BoolV, rhs: BoolV) -> Bool {
+        lhs.b == rhs.b
+  }
+}
+
+class PrimV: Val {
+  var s: Symbol
+  init(s: Symbol){
+    self.s = s
+  }
+}
+
+extension PrimV: Equatable {
+    static func == (lhs: PrimV, rhs: PrimV) -> Bool {
+        lhs.s == rhs.s
   }
 }
 
@@ -132,17 +152,26 @@ class ClosV : Val{
         self.body = body
         self.env = env
     }
-    
+}
+
+extension ClosV: Equatable {
+    static func == (lhs: ClosV, rhs: ClosV) -> Bool {
+        lhs.args == rhs.args
+  }
 }
 
 func interp(e : ExprC, env: Env) throws -> Val {
   switch e {
+  // NumC case
   case let n as NumC:
     return NumV(v : n.v)
+  // StrC case
   case let st as StrC:
     return StrV(s: st.str)
+  // LamC case
   case let l as LamC:
     return ClosV(args: l.args, body: l.body, env: env)
+  // IdC case
   case let id as IdC:
     if let res = env.e[id.sym]{
         return res
@@ -150,35 +179,40 @@ func interp(e : ExprC, env: Env) throws -> Val {
     else {
         throw UnboundIdError.noIdFoundInEnv
     }
-    case let i as IfC:
-        let tstval = try interp(e: i.test, env: env)
-        
-        switch tstval{
-        case let b as BoolV:
-            if b.b { return try interp(e: i.then, env: env) }
-            else{ return try interp(e: i.els, env: env) }
-        default:
-          // error message here
-          return NumV(v: 3)
-      }
-    case let a as AppC:
-      let fn = try interp(e: a.fun, env: env)
-      let argvals = try a.args.map { try interp(e: $0, env: env) }
-      switch fn {
-        case let clos as ClosV:
-          for i in 0...a.args.count {
+  // IfC case
+  case let i as IfC:
+    let tstval = try interp(e: i.test, env: env)
+    switch tstval{
+    case let b as BoolV:
+        if b.b{
+            return try interp(e: i.then, env: env)
+        }
+        else{
+            return try interp(e: i.els, env: env)
+        }
+    default:
+        // error message here
+        return NumV(v: 3)
+    }
+  // AppC case
+  case let a as AppC:
+    let fn = try interp(e: a.fun, env: env)
+    let argvals = try a.args.map {
+        try interp(e: $0, env: env)
+    }
+    switch fn {
+    case let clos as ClosV:
+        for i in 0...a.args.count {
             clos.env.e[clos.args[i]] = argvals[i]
-          }
-          return try interp(e: clos.body, env: clos.env)
-        case let prim as PrimV:
-          return NumV(v: 3)
-        default:
-          return NumV(v: 3)
-      }
-
-
+        }
+        return try interp(e: clos.body, env: clos.env)
+    case let prim as PrimV:
+        return NumV(v: 3)
     default:
         return NumV(v: 3)
+    }
+  default:
+    return NumV(v: 3)
   }
 }
 
